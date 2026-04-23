@@ -1,0 +1,251 @@
+/* ── Reset & base ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-base:       #0f0f1a;
+  --bg-surface:    #1a1a2e;
+  --bg-elevated:   #22223a;
+  --border:        #2e2e4a;
+  --text-primary:  #e0e0f0;
+  --text-muted:    #7878a0;
+  --accent:        #6366f1;
+  --accent-cyan:   #22d3ee;
+  --good:          #22c55e;
+  --bad:           #ef4444;
+  --neutral:       #6b7280;
+  --radius:        10px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--bg-base);
+}
+
+body { min-height: 100vh; }
+
+/* ── Layout ───────────────────────────────────────────────────────────────── */
+.app { display: flex; flex-direction: column; min-height: 100vh; }
+
+.app-header {
+  padding: 20px 32px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-surface);
+}
+.app-header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.5px; }
+.app-header p  { color: var(--text-muted); margin-top: 4px; font-size: 0.85rem; }
+
+.app-body {
+  display: flex;
+  flex: 1;
+  gap: 0;
+}
+
+/* ── Sidebar / Checklist ──────────────────────────────────────────────────── */
+.checklist {
+  width: 280px;
+  min-width: 280px;
+  padding: 24px 16px;
+  border-right: 1px solid var(--border);
+  background: var(--bg-surface);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.checklist h2 { font-size: 0.95rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+
+.checklist ul { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.checklist li label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.checklist li label:hover    { background: var(--bg-elevated); }
+.checklist li label.selected { background: var(--bg-elevated); border-color: var(--accent); }
+
+.checklist input[type="checkbox"] { display: none; }
+.scenario-name { font-weight: 600; font-size: 0.9rem; }
+.scenario-desc { font-size: 0.78rem; color: var(--text-muted); line-height: 1.4; }
+
+/* ── Mode selector ────────────────────────────────────────────────────────── */
+.mode-selector { display: flex; flex-direction: column; gap: 8px; }
+.mode-selector h3 { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+.mode-selector label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.mode-selector label:hover { background: var(--bg-elevated); }
+.mode-selector input[type="radio"]:checked + span,
+.mode-selector label:has(input:checked) { color: var(--accent-cyan); }
+
+/* ── Run button ───────────────────────────────────────────────────────────── */
+.run-btn {
+  margin-top: auto;
+  padding: 12px;
+  border-radius: var(--radius);
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.run-btn:hover:not(:disabled) { opacity: 0.85; transform: translateY(-1px); }
+.run-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Main content ─────────────────────────────────────────────────────────── */
+.main-content { flex: 1; padding: 32px; overflow-y: auto; }
+
+.empty-state, .loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.error-banner {
+  width: 100%;
+  padding: 12px 32px;
+  background: #3a1a1a;
+  border-bottom: 1px solid #6b2222;
+  color: #f87171;
+  font-size: 0.875rem;
+}
+
+/* ── Dashboard ────────────────────────────────────────────────────────────── */
+.dashboard h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 24px; }
+.mode-tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  vertical-align: middle;
+}
+
+.scenario-result {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+.scenario-result h3 { font-size: 1rem; font-weight: 600; margin-bottom: 16px; color: var(--accent-cyan); }
+
+/* ── Metrics table ────────────────────────────────────────────────────────── */
+.metrics-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 24px;
+  font-size: 0.875rem;
+}
+.metrics-table th {
+  text-align: left;
+  padding: 8px 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+  border-bottom: 1px solid var(--border);
+}
+.metrics-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.metrics-table tr:last-child td { border-bottom: none; }
+
+/* ── Delta badges ─────────────────────────────────────────────────────────── */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.badge.good    { background: #14532d55; color: var(--good); border: 1px solid #166534; }
+.badge.bad     { background: #7f1d1d55; color: var(--bad);  border: 1px solid #991b1b; }
+.badge.neutral { background: var(--bg-elevated); color: var(--text-muted); border: 1px solid var(--border); }
+
+/* ── Scenario Detail (Before/After/Why) ──────────────────────────────────── */
+.detail-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+.detail-panel h2 { font-size: 1rem; font-weight: 600; margin-bottom: 16px; color: var(--accent-cyan); }
+
+.result-detail { margin-top: 24px; }
+.result-detail h4 { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+
+.scenario-detail { display: flex; flex-direction: column; gap: 0; }
+
+.detail-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 0;
+}
+.detail-tabs .tab {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: var(--bg-base);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.detail-tabs .tab:hover  { background: var(--bg-elevated); color: var(--text-primary); }
+.detail-tabs .tab.active { background: var(--bg-elevated); color: var(--text-primary); border-color: var(--border); }
+
+.detail-content {
+  border: 1px solid var(--border);
+  border-radius: 0 var(--radius) var(--radius) var(--radius);
+  overflow: hidden;
+}
+
+.code-block {
+  margin: 0;
+  padding: 20px;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem;
+  line-height: 1.7;
+  overflow-x: auto;
+  white-space: pre;
+}
+.code-block.baseline { border-left: 3px solid var(--bad); }
+.code-block.optimized { border-left: 3px solid var(--good); }
+
+.why-text {
+  padding: 20px;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  line-height: 1.8;
+  white-space: pre-line;
+}
+
+/* ── Focused scenario in checklist ───────────────────────────────────────── */
+.checklist li label.focused {
+  border-color: var(--accent-cyan);
+  background: var(--bg-elevated);
+}

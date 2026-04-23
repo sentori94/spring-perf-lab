@@ -22,7 +22,14 @@ public class PerfLabController {
     @GetMapping("/scenarios")
     public ResponseEntity<List<ScenarioMetadataDto>> getScenarios() {
         List<ScenarioMetadataDto> metadata = testRunnerService.listAll().stream()
-                .map(s -> new ScenarioMetadataDto(s.getId(), s.getName(), s.getDescription()))
+                .map(s -> new ScenarioMetadataDto(
+                        s.getId(),
+                        s.getName(),
+                        s.getDescription(),
+                        s.getBaselineCode(),
+                        s.getOptimizedCode(),
+                        s.getWhyExplanation()
+                ))
                 .toList();
         return ResponseEntity.ok(metadata);
     }
@@ -32,4 +39,3 @@ public class PerfLabController {
         return ResponseEntity.ok(testRunnerService.run(request));
     }
 }
-

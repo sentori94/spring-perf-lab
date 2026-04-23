@@ -90,23 +90,26 @@ Use `MetricsCollector.snapshot()` before and after each run. `MetricsSnapshot` f
 The shell is **PowerShell** on Windows. Always use this exact format to run Maven commands:
 
 ```powershell
-$env:JAVA_HOME = "C:\Program Files\Java\jdk-21.0.11"; cd "C:\Users\User\Desktop\Sentori Studio\DEVELOPER\Workspace\spring-perf-lab"; .\mvnw.cmd <goal> 2>&1
+$env:JAVA_HOME = "C:\Program Files\Java\jdk-21.0.11"; cd "C:\Users\User\Desktop\Sentori Studio\DEVELOPER\Workspace\spring-perf-lab\backend"; .\mvnw.cmd <goal> 2>&1
 ```
 
 - Always set `$env:JAVA_HOME` before running Maven — the system `JAVA_HOME` points to JDK 17 which is incompatible with this project (Java 21)
 - Always prefix `mvnw.cmd` with `.\` (required by PowerShell)
 - Always use `;` as command separator (not `&&`)
 - Always append `2>&1` to capture both stdout and stderr
+- Maven commands must be run from `backend/` — not from the repo root
 
 Examples:
 ```powershell
 # Compile
-$env:JAVA_HOME = "C:\Program Files\Java\jdk-21.0.11"; cd "C:\Users\User\Desktop\Sentori Studio\DEVELOPER\Workspace\spring-perf-lab"; .\mvnw.cmd compile -q 2>&1
+$env:JAVA_HOME = "C:\Program Files\Java\jdk-21.0.11"; cd "C:\Users\User\Desktop\Sentori Studio\DEVELOPER\Workspace\spring-perf-lab\backend"; .\mvnw.cmd compile -q 2>&1
 
 # Test
-$env:JAVA_HOME = "C:\Program Files\Java\jdk-21.0.11"; cd "C:\Users\User\Desktop\Sentori Studio\DEVELOPER\Workspace\spring-perf-lab"; .\mvnw.cmd test 2>&1
+$env:JAVA_HOME = "C:\Program Files\Java\jdk-21.0.11"; cd "C:\Users\User\Desktop\Sentori Studio\DEVELOPER\Workspace\spring-perf-lab\backend"; .\mvnw.cmd test 2>&1
 
 # Package
-$env:JAVA_HOME = "C:\Program Files\Java\jdk-21.0.11"; cd "C:\Users\User\Desktop\Sentori Studio\DEVELOPER\Workspace\spring-perf-lab"; .\mvnw.cmd package -q 2>&1
-```
+$env:JAVA_HOME = "C:\Program Files\Java\jdk-21.0.11"; cd "C:\Users\User\Desktop\Sentori Studio\DEVELOPER\Workspace\spring-perf-lab\backend"; .\mvnw.cmd package -q 2>&1
 
+# Run
+$env:JAVA_HOME = "C:\Program Files\Java\jdk-21.0.11"; cd "C:\Users\User\Desktop\Sentori Studio\DEVELOPER\Workspace\spring-perf-lab\backend"; .\mvnw.cmd spring-boot:run 2>&1
+```

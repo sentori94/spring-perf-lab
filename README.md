@@ -45,27 +45,29 @@ Each optimization includes a **Before / After / Why** panel with annotated code 
 ## Project structure
 
 ```
-spring-perf-lab/
-└── src/main/java/com/sentori/spring_perf_lab/
-    ├── api/
-    │   ├── dto/                   # Request & response records (DTOs)
-    │   ├── PerfLabController.java # GET /api/scenarios, POST /api/test/run
-    │   └── GlobalExceptionHandler.java
-    ├── metrics/
-    │   ├── MetricsCollector.java  # Reads JVM MXBeans
-    │   ├── MetricsSnapshot.java   # Immutable metrics record
-    │   └── MetricsDiff.java       # Delta baseline → optimized
-    ├── runner/
-    │   └── TestRunnerService.java # Orchestrates scenario execution
-    └── scenarios/
-        ├── PerfScenario.java              # Interface contract
-        ├── ScenarioExecutionException.java
-        └── nplus1/
-            ├── Author.java
-            ├── Book.java
-            ├── AuthorRepository.java
-            ├── NPlus1DataInitializer.java
-            └── NPlus1Scenario.java
+spring-perf-lab/                   ← monorepo root
+├── backend/                       ← Spring Boot application
+│   ├── src/main/java/com/sentori/spring_perf_lab/
+│   │   ├── api/                   # REST controllers + DTOs + error handling
+│   │   ├── metrics/               # MetricsCollector, MetricsSnapshot, MetricsDiff
+│   │   ├── runner/                # TestRunnerService
+│   │   └── scenarios/             # PerfScenario interface + one package per scenario
+│   │       └── nplus1/            # N+1 entities, repository, scenario
+│   ├── pom.xml
+│   └── mvnw / mvnw.cmd
+├── frontend/                      ← React 18+ application
+│   └── src/
+│       ├── components/
+│       │   ├── ScenarioChecklist.tsx  # Sidebar: scenario selection + mode + run button
+│       │   ├── ResultsDashboard.tsx   # Before/after metrics table with delta badges
+│       │   └── MetricsChart.tsx       # Recharts bar chart (baseline vs optimized)
+│       ├── services/
+│       │   └── perfLabApiService.ts   # All HTTP calls (Axios)
+│       ├── types/index.ts             # TypeScript interfaces
+│       └── App.tsx                    # Layout + global state
+├── infra/                         ← Terraform + Docker Compose (coming soon)
+└── .github/
+    └── copilot-instructions.md
 ```
 
 ## REST API
@@ -112,7 +114,6 @@ Runs one or more scenarios and returns before/after metrics.
 ## Getting started
 
 ```bash
-# Clone
 git clone https://github.com/sentori94/spring-perf-lab.git
 cd spring-perf-lab
 ```
@@ -120,15 +121,16 @@ cd spring-perf-lab
 ### Backend (Java 21 required)
 
 ```powershell
-# Windows (PowerShell) — set JAVA_HOME to JDK 21 first
+# Windows (PowerShell)
 $env:JAVA_HOME = "C:\Program Files\Java\jdk-21.0.11"
+cd backend
 .\mvnw.cmd spring-boot:run
 ```
 
 Backend available at `http://localhost:8080`
 H2 Console available at `http://localhost:8080/h2-console` (JDBC URL: `jdbc:h2:mem:perflab`)
 
-### Frontend *(coming soon)*
+### Frontend
 
 ```bash
 cd frontend
@@ -136,7 +138,7 @@ npm install
 npm run dev
 ```
 
-Frontend will be available at `http://localhost:5173`
+Frontend available at `http://localhost:5173`
 
 ## Requirements
 

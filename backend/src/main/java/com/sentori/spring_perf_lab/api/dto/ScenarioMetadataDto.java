@@ -10,6 +10,8 @@ package com.sentori.spring_perf_lab.api.dto;
 public record ScenarioMetadataDto(
         String id,
         String name,
-        String description
+        String description,
+        String baselineCode,
+        String optimizedCode,
+        String whyExplanation
 ) {}
-

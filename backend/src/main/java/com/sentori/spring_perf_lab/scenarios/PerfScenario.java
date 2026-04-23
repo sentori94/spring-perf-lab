@@ -24,6 +24,25 @@ public interface PerfScenario {
      */
     String getDescription();
 
+    // ── Code explanation ──────────────────────────────────────────────────────
+
+    /**
+     * Returns the code for the baseline (unoptimized) version as a string.
+     */
+    String getBaselineCode();
+
+    /**
+     * Returns the code for the optimized version as a string.
+     */
+    String getOptimizedCode();
+
+    /**
+     * Provides an explanation of why the optimized version is expected to perform better.
+     */
+    String getWhyExplanation();
+
+    // ── Runs ──────────────────────────────────────────────────────────────────
+
     /**
      * Runs the intentionally unoptimized implementation and returns its metrics.
      */
@@ -34,4 +53,3 @@ public interface PerfScenario {
      */
     MetricsSnapshot runOptimized();
 }
-
