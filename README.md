@@ -4,67 +4,109 @@ An interactive Spring Boot performance benchmarking tool that demonstrates the r
 
 ## What it does
 
-You select one or more optimizations from a checklist, launch a load test, and instantly see the performance delta vs a non-optimized baseline:
+You select one or more optimizations from a checklist, launch a test, and instantly see the performance delta vs a non-optimized baseline:
 
-- Response time (avg, p95, p99)
-- Throughput (req/s)
+- Response time (elapsed ms)
 - Heap memory used (MB)
 - GC pause count and total duration
 - Allocation rate (MB/s)
 - SQL query count (N+1 detection)
-- Cache hit rate
 
 Each optimization includes a **Before / After / Why** panel with annotated code snippets explaining the underlying mechanism.
 
-## Optimization categories
+## Optimization scenarios
 
-- **Database** — N+1 JPA fix, Caffeine L2 cache, DTO projections, batch inserts, HikariCP tuning
-- **JVM & GC** — ZGC vs G1GC, heap sizing, string deduplication, AlwaysPreTouch
-- **Memory** — autoboxing avoidance, object pooling, off-heap buffers, weak/soft references
-- **Collections** — ArrayList vs LinkedList, EnumMap/EnumSet, initial capacity tuning
-- **Concurrency** — Virtual threads (Java 21), @Async + ThreadPoolTaskExecutor, parallel streams
-- **HTTP** — GZIP compression, HTTP/2, Jackson tuning, pagination
+| ID | Name | Category |
+|----|------|----------|
+| `n-plus-1` | N+1 Query Fix | Database |
+| `caffeine-cache` | Caffeine L2 Cache | Database |
+| `zgc-vs-g1` | ZGC vs G1GC | JVM & GC |
+| `autoboxing` | Autoboxing Avoidance | Memory |
+| `virtual-threads` | Virtual Threads (Java 21) | Concurrency |
 
 ## Test modes
 
-- **Quick mode** — runs a tight loop (10,000 iterations) in-process, results in ~2–3 seconds
-- **Load test mode** — Gatling simulates 50 virtual users over 30 seconds, realistic throughput measurement
+- **QUICK** — runs both baseline and optimized in-process, results in seconds
+- **LOAD** — Gatling simulates concurrent users over 30 seconds *(coming soon)*
 
 ## Tech stack
 
 | Layer | Technology |
 |-------|-----------|
-| Backend | Java 21, Spring Boot 3.x |
+| Backend | Java 21, Spring Boot 4.x |
 | Metrics | Micrometer, Spring Actuator |
-| Load testing | Gatling (programmatic) |
 | Cache | Caffeine |
-| Database | PostgreSQL + HikariCP |
-| Frontend | Angular 17+ |
-| Charts | ngx-charts |
+| Database | H2 (dev) / PostgreSQL (prod) |
+| Frontend | React 18+, TypeScript |
+| Charts | Recharts |
+| HTTP client | Axios |
 | Infra | Docker Compose, AWS EC2, GitHub Actions |
 
 ## Project structure
 
 ```
 spring-perf-lab/
-├── backend/
-│   ├── src/main/java/
-│   │   ├── scenarios/         # One class per optimization (baseline + optimized)
-│   │   ├── metrics/           # Micrometer capture and comparison logic
-│   │   ├── runner/            # Test orchestration (quick + Gatling modes)
-│   │   └── api/               # REST endpoints consumed by frontend
-│   └── src/test/
-│       └── gatling/           # Load test simulations
-├── frontend/
-│   └── src/app/
-│       ├── checklist/         # Optimization selector component
-│       ├── dashboard/         # Metrics comparison dashboard
-│       └── detail/            # Before/After/Why panel
-├── infra/
-│   ├── docker-compose.yml
-│   └── terraform/             # AWS EC2 provisioning
-└── .github/
-    └── workflows/             # CI/CD pipeline
+└── src/main/java/com/sentori/spring_perf_lab/
+    ├── api/
+    │   ├── dto/                   # Request & response records (DTOs)
+    │   ├── PerfLabController.java # GET /api/scenarios, POST /api/test/run
+    │   └── GlobalExceptionHandler.java
+    ├── metrics/
+    │   ├── MetricsCollector.java  # Reads JVM MXBeans
+    │   ├── MetricsSnapshot.java   # Immutable metrics record
+    │   └── MetricsDiff.java       # Delta baseline → optimized
+    ├── runner/
+    │   └── TestRunnerService.java # Orchestrates scenario execution
+    └── scenarios/
+        ├── PerfScenario.java              # Interface contract
+        ├── ScenarioExecutionException.java
+        └── nplus1/
+            ├── Author.java
+            ├── Book.java
+            ├── AuthorRepository.java
+            ├── NPlus1DataInitializer.java
+            └── NPlus1Scenario.java
+```
+
+## REST API
+
+### `GET /api/scenarios`
+Returns the list of available scenarios.
+
+```json
+[
+  {
+    "id": "n-plus-1",
+    "name": "N+1 Query Fix",
+    "description": "Demonstrates how lazy-loading triggers one SQL query per author..."
+  }
+]
+```
+
+### `POST /api/test/run`
+Runs one or more scenarios and returns before/after metrics.
+
+**Request:**
+```json
+{
+  "scenarioIds": ["n-plus-1"],
+  "mode": "QUICK"
+}
+```
+
+**Response:**
+```json
+{
+  "mode": "QUICK",
+  "results": [
+    {
+      "scenarioId": "n-plus-1",
+      "baseline":  { "heapUsedMb": 45.2, "gcPauseMs": 12, "gcCount": 1, "sqlQueryCount": 51, "elapsedMs": 340 },
+      "optimized": { "heapUsedMb": 41.1, "gcPauseMs":  8, "gcCount": 1, "sqlQueryCount":  1, "elapsedMs":  85 },
+      "diff":      { "heapUsedMbDelta": -4.1, "gcPauseMsDelta": -4, "sqlQueryCountDelta": -50, "elapsedMsDelta": -255 }
+    }
+  ]
+}
 ```
 
 ## Getting started
@@ -73,28 +115,34 @@ spring-perf-lab/
 # Clone
 git clone https://github.com/sentori94/spring-perf-lab.git
 cd spring-perf-lab
-
-# Run locally with Docker Compose
-docker compose up
-
-# Backend available at http://localhost:8080
-# Frontend available at http://localhost:4200
 ```
 
-## Running a benchmark
+### Backend (Java 21 required)
 
-1. Open the app at `http://localhost:4200`
-2. Select one or more optimizations from the sidebar
-3. Choose **Quick** or **Load test** mode
-4. Click **Lancer le test**
-5. View the before/after comparison table and memory charts
-6. Click any row to open the code explanation panel
+```powershell
+# Windows (PowerShell) — set JAVA_HOME to JDK 21 first
+$env:JAVA_HOME = "C:\Program Files\Java\jdk-21.0.11"
+.\mvnw.cmd spring-boot:run
+```
+
+Backend available at `http://localhost:8080`
+H2 Console available at `http://localhost:8080/h2-console` (JDBC URL: `jdbc:h2:mem:perflab`)
+
+### Frontend *(coming soon)*
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Frontend will be available at `http://localhost:5173`
 
 ## Requirements
 
 - Java 21+
-- Docker & Docker Compose
-- Node.js 20+ (frontend dev)
+- Node.js 20+ *(frontend)*
+- Docker & Docker Compose *(optional, for PostgreSQL in prod)*
 
 ## License
 

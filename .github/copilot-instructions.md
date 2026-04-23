@@ -11,7 +11,7 @@ The frontend (Angular) lets users select optimizations, trigger tests, and see b
 ## Stack
 
 - **Backend**: Java 21, Spring Boot 4.x, Micrometer, Gatling, HikariCP, Caffeine, PostgreSQL
-- **Frontend**: Angular 17+, RxJS, ngx-charts
+- **Frontend**: React 18+, TypeScript, Recharts, Axios
 - **Infra**: Docker Compose, AWS EC2 t3.micro, Terraform, GitHub Actions
 
 ---
@@ -68,9 +68,9 @@ Use `MetricsCollector.snapshot()` before and after each run. `MetricsSnapshot` f
 
 ## Frontend conventions
 
-- Standalone Angular components throughout — no NgModules
-- All HTTP calls go through `PerfLabApiService` only
-- State via RxJS `BehaviorSubject` — no NgRx
+- Functional components + hooks only — no class components
+- All HTTP calls go through `perfLabApiService.ts` only
+- State via `useState` / `useReducer` — no Redux
 - Impact levels: `HIGH` = green, `MEDIUM` = amber, `LOW` = gray
 
 ---
@@ -82,3 +82,31 @@ Use `MetricsCollector.snapshot()` before and after each run. `MetricsSnapshot` f
 3. `ZgcVsG1Scenario`
 4. `AutoboxingScenario`
 5. `VirtualThreadsScenario`
+
+---
+
+## Terminal & Maven commands
+
+The shell is **PowerShell** on Windows. Always use this exact format to run Maven commands:
+
+```powershell
+$env:JAVA_HOME = "C:\Program Files\Java\jdk-21.0.11"; cd "C:\Users\User\Desktop\Sentori Studio\DEVELOPER\Workspace\spring-perf-lab"; .\mvnw.cmd <goal> 2>&1
+```
+
+- Always set `$env:JAVA_HOME` before running Maven — the system `JAVA_HOME` points to JDK 17 which is incompatible with this project (Java 21)
+- Always prefix `mvnw.cmd` with `.\` (required by PowerShell)
+- Always use `;` as command separator (not `&&`)
+- Always append `2>&1` to capture both stdout and stderr
+
+Examples:
+```powershell
+# Compile
+$env:JAVA_HOME = "C:\Program Files\Java\jdk-21.0.11"; cd "C:\Users\User\Desktop\Sentori Studio\DEVELOPER\Workspace\spring-perf-lab"; .\mvnw.cmd compile -q 2>&1
+
+# Test
+$env:JAVA_HOME = "C:\Program Files\Java\jdk-21.0.11"; cd "C:\Users\User\Desktop\Sentori Studio\DEVELOPER\Workspace\spring-perf-lab"; .\mvnw.cmd test 2>&1
+
+# Package
+$env:JAVA_HOME = "C:\Program Files\Java\jdk-21.0.11"; cd "C:\Users\User\Desktop\Sentori Studio\DEVELOPER\Workspace\spring-perf-lab"; .\mvnw.cmd package -q 2>&1
+```
+
