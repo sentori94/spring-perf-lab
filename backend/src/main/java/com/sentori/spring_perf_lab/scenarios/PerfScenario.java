@@ -41,6 +41,11 @@ public interface PerfScenario {
      */
     String getWhyExplanation();
 
+    /**
+     * The expected performance impact level: HIGH, MEDIUM, or LOW.
+     */
+    String getImpact();
+
     // ── Runs ──────────────────────────────────────────────────────────────────
 
     /**

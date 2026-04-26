@@ -1,5 +1,11 @@
 import type { ScenarioMetadata, TestMode } from '../types';
 
+const IMPACT_LABELS: Record<string, string> = {
+  HIGH:   'Fort',
+  MEDIUM: 'Moyen',
+  LOW:    'Faible',
+};
+
 interface Props {
   scenarios: ScenarioMetadata[];
   selectedIds: string[];
@@ -42,7 +48,9 @@ export default function ScenarioChecklist({
               <span className="scenario-name" onClick={() => onFocus(s.id)}>
                 {s.name}
               </span>
-              <span className="scenario-desc">{s.description}</span>
+              <span className={`impact-badge impact-${s.impact?.toLowerCase()}`}>
+                {IMPACT_LABELS[s.impact] ?? s.impact}
+              </span>
             </label>
           </li>
         ))}

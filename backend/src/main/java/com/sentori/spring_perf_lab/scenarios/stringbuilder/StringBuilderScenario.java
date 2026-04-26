@@ -35,7 +35,8 @@ public class StringBuilderScenario implements PerfScenario {
         this.metricsCollector = metricsCollector;
     }
 
-    @Override public String getId()   { return "string-builder"; }
+    @Override public String getId()     { return "string-builder"; }
+    @Override public String getImpact() { return "LOW"; }
     @Override public String getName() { return "String += vs StringBuilder"; }
 
     @Override

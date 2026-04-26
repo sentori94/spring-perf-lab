@@ -43,7 +43,8 @@ public class VirtualThreadsScenario implements PerfScenario {
         this.metricsCollector = metricsCollector;
     }
 
-    @Override public String getId()   { return "virtual-threads"; }
+    @Override public String getId()     { return "virtual-threads"; }
+    @Override public String getImpact() { return "HIGH"; }
     @Override public String getName() { return "Virtual Threads vs Platform Threads"; }
 
     @Override

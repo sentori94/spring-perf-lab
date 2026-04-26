@@ -28,7 +28,8 @@ public class PerfLabController {
                         s.getDescription(),
                         s.getBaselineCode(),
                         s.getOptimizedCode(),
-                        s.getWhyExplanation()
+                        s.getWhyExplanation(),
+                        s.getImpact()
                 ))
                 .toList();
         return ResponseEntity.ok(metadata);

@@ -42,7 +42,8 @@ public class ParallelStreamsScenario implements PerfScenario {
         this.metricsCollector = metricsCollector;
     }
 
-    @Override public String getId()   { return "parallel-streams"; }
+    @Override public String getId()     { return "parallel-streams"; }
+    @Override public String getImpact() { return "MEDIUM"; }
     @Override public String getName() { return "Parallel Streams (CPU-bound)"; }
 
     @Override

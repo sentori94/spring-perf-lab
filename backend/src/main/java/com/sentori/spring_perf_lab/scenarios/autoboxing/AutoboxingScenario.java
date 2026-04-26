@@ -34,7 +34,8 @@ public class AutoboxingScenario implements PerfScenario {
         this.metricsCollector = metricsCollector;
     }
 
-    @Override public String getId()   { return "autoboxing"; }
+    @Override public String getId()     { return "autoboxing"; }
+    @Override public String getImpact() { return "LOW"; }
     @Override public String getName() { return "Autoboxing — Integer vs int"; }
 
     @Override

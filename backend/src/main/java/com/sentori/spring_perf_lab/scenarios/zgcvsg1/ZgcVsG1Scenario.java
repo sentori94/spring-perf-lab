@@ -35,7 +35,8 @@ public class ZgcVsG1Scenario implements PerfScenario {
         this.metricsCollector = metricsCollector;
     }
 
-    @Override public String getId()   { return "zgc-vs-g1"; }
+    @Override public String getId()     { return "zgc-vs-g1"; }
+    @Override public String getImpact() { return "MEDIUM"; }
     @Override public String getName() { return "ZGC vs G1 — Allocation Pressure"; }
 
     @Override

@@ -49,14 +49,19 @@ body { min-height: 100vh; }
   display: flex;
   flex-direction: column;
   gap: 20px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
 }
 .checklist h2 { font-size: 0.95rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
 
 .checklist ul { list-style: none; display: flex; flex-direction: column; gap: 6px; }
 .checklist li label {
   display: flex;
-  flex-direction: column;
-  gap: 3px;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
   padding: 10px 12px;
   border-radius: var(--radius);
   border: 1px solid transparent;
@@ -67,8 +72,21 @@ body { min-height: 100vh; }
 .checklist li label.selected { background: var(--bg-elevated); border-color: var(--accent); }
 
 .checklist input[type="checkbox"] { display: none; }
-.scenario-name { font-weight: 600; font-size: 0.9rem; }
-.scenario-desc { font-size: 0.78rem; color: var(--text-muted); line-height: 1.4; }
+.scenario-name { font-weight: 600; font-size: 0.9rem; flex: 1; }
+
+/* ── Impact badges ────────────────────────────────────────────────────────── */
+.impact-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+}
+.impact-high   { background: #14532d55; color: var(--good);    border: 1px solid #166534; }
+.impact-medium { background: #4a2c0055; color: #f59e0b;        border: 1px solid #92400e; }
+.impact-low    { background: var(--bg-elevated); color: var(--text-muted); border: 1px solid var(--border); }
 
 /* ── Mode selector ────────────────────────────────────────────────────────── */
 .mode-selector { display: flex; flex-direction: column; gap: 8px; }

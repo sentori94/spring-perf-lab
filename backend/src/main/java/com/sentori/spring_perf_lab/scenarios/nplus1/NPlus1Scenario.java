@@ -29,6 +29,9 @@ public class NPlus1Scenario implements PerfScenario {
     public String getId() { return "n-plus-1"; }
 
     @Override
+    public String getImpact() { return "HIGH"; }
+
+    @Override
     public String getName() { return "N+1 Query Fix"; }
 
     @Override

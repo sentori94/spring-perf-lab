@@ -7,6 +7,7 @@ export interface ScenarioMetadata {
   baselineCode: string;
   optimizedCode: string;
   whyExplanation: string;
+  impact: 'HIGH' | 'MEDIUM' | 'LOW';
 }
 
 // ── Metrics (from POST /api/test/run) ─────────────────────────────────────────

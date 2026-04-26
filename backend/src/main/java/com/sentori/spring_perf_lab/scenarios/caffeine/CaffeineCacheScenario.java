@@ -31,8 +31,7 @@ public class CaffeineCacheScenario implements PerfScenario {
         this.metricsCollector = metricsCollector;
     }
 
-    @Override public String getId()          { return "caffeine-cache"; }
-    @Override public String getName()        { return "Caffeine L2 Cache"; }
+    @Override public String getId()          { return "caffeine-cache"; }    @Override public String getImpact()       { return "HIGH"; }    @Override public String getName()        { return "Caffeine L2 Cache"; }
     @Override public String getDescription() {
         return "Demonstrates how Caffeine caches query results in memory, " +
                "eliminating repeated SQL hits for the same data.";

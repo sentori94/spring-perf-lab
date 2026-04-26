@@ -6,6 +6,7 @@ package com.sentori.spring_perf_lab.api.dto;
  * @param id          Unique identifier (e.g. "n-plus-1")
  * @param name        Human-readable name (e.g. "N+1 Query Fix")
  * @param description Short description of what the scenario demonstrates
+ * @param impact      Expected impact level: HIGH, MEDIUM, or LOW
  */
 public record ScenarioMetadataDto(
         String id,
@@ -13,5 +14,6 @@ public record ScenarioMetadataDto(
         String description,
         String baselineCode,
         String optimizedCode,
-        String whyExplanation
+        String whyExplanation,
+        String impact
 ) {}
