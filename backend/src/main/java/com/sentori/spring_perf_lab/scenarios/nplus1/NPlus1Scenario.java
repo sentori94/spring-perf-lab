@@ -36,8 +36,8 @@ public class NPlus1Scenario implements PerfScenario {
 
     @Override
     public String getDescription() {
-        return "Demonstrates how lazy-loading triggers one SQL query per author (N+1), " +
-               "vs a single JOIN FETCH that loads everything at once.";
+        return "Demonstre comment le chargement lazy d'Hibernate génère 501 requêtes SQL " +
+               "(1 findAll + 500 par auteur) contre 1 seule requête avec JOIN FETCH.";
     }
 
     @Override
@@ -50,8 +50,8 @@ public class NPlus1Scenario implements PerfScenario {
             List<Author> authors = authorRepository.findAll();
             authors.forEach(author -> author.getBooks().size());
 
-            long queryCount = authors.size() + 1L;
-            log.debug("[n-plus-1] baseline: {} authors, ~{} SQL queries", authors.size(), queryCount);
+            long queryCount = authors.size() + 1L;  // 1 findAll + 1 par auteur
+            log.debug("[n-plus-1] baseline: {} authors, {} SQL queries", authors.size(), queryCount);
 
             return metricsCollector.snapshot(runStart, queryCount);
         } catch (Exception e) {

@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -43,6 +44,8 @@ public class TestRunnerService {
         return List.copyOf(scenariosById.values());
     }
 
+    private static final long LOAD_TARGET_MS = 5_000;
+
     private ScenarioResultDto runOne(String scenarioId, String mode) {
         PerfScenario scenario = scenariosById.get(scenarioId);
         if (scenario == null) {
@@ -51,6 +54,10 @@ public class TestRunnerService {
         }
 
         log.info("Running scenario '{}' in {} mode", scenarioId, mode);
+
+        if ("LOAD".equalsIgnoreCase(mode)) {
+            return runLoad(scenarioId, scenario);
+        }
 
         MetricsSnapshot baseline  = scenario.runBaseline();
         MetricsSnapshot optimized = scenario.runOptimized();
@@ -61,6 +68,67 @@ public class TestRunnerService {
                 optimized,
                 optimized.diffFrom(baseline)
         );
+    }
+
+    /**
+     * LOAD mode: runs baseline freely for ~5 s and counts the real iteration count N,
+     * then runs optimized for exactly N iterations.
+     *
+     * Baseline fills 5 s of real work → N iterations, elapsed measured via nanoTime.
+     * Optimized does the same N iterations → elapsed reflects the true speedup.
+     * Using System.nanoTime() ensures sub-millisecond runs are timed accurately
+     * (System.currentTimeMillis() rounds to ~1 ms and returns 0 for fast runs).
+     */
+    private ScenarioResultDto runLoad(String scenarioId, PerfScenario scenario) {
+        long deadline = System.currentTimeMillis() + LOAD_TARGET_MS;
+        long tStart = System.nanoTime();
+        long gcPauseSum = 0, gcCountSum = 0, sqlSum = 0;
+        double lastHeap = 0, lastAllocRate = 0;
+        int n = 0;
+
+        do {
+            MetricsSnapshot s = scenario.runBaseline();
+            gcPauseSum   += s.gcPauseMs();
+            gcCountSum   += s.gcCount();
+            sqlSum       += s.sqlQueryCount();
+            lastHeap      = s.heapUsedMb();
+            lastAllocRate = s.allocationRateMbPerSec();
+            n++;
+        } while (System.currentTimeMillis() < deadline);
+
+        long baselineElapsedMs = (System.nanoTime() - tStart) / 1_000_000;
+        MetricsSnapshot baseline = new MetricsSnapshot(lastHeap, gcPauseSum, gcCountSum, lastAllocRate, sqlSum, baselineElapsedMs);
+
+        log.info("LOAD baseline for '{}': {} real iterations in {}ms", scenarioId, n, baselineElapsedMs);
+
+        MetricsSnapshot optimized = runNTimes(scenario::runOptimized, n);
+
+        return new ScenarioResultDto(
+                scenarioId,
+                baseline,
+                optimized,
+                optimized.diffFrom(baseline)
+        );
+    }
+
+    /**
+     * Runs {@code runner} exactly {@code n} times and returns an aggregated snapshot.
+     * Uses System.nanoTime() for accurate total elapsed time regardless of per-run duration.
+     */
+    private MetricsSnapshot runNTimes(Supplier<MetricsSnapshot> runner, int n) {
+        long tStart = System.nanoTime();
+        long gcPauseSum = 0, gcCountSum = 0, sqlSum = 0;
+        double lastHeap = 0, lastAllocRate = 0;
+        for (int i = 0; i < n; i++) {
+            MetricsSnapshot s = runner.get();
+            gcPauseSum   += s.gcPauseMs();
+            gcCountSum   += s.gcCount();
+            sqlSum       += s.sqlQueryCount();
+            lastHeap      = s.heapUsedMb();
+            lastAllocRate = s.allocationRateMbPerSec();
+        }
+        long elapsedMs = (System.nanoTime() - tStart) / 1_000_000;
+        return new MetricsSnapshot(lastHeap, gcPauseSum, gcCountSum, lastAllocRate, sqlSum, elapsedMs);
     }
 }
 

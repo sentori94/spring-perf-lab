@@ -9,15 +9,17 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Populates the database with test data for the N+1 scenario.
- * Creates 50 authors with 20 books each = 1 000 books total.
+ * Creates 500 authors with 10 books each = 5 000 books total.
+ * A larger dataset makes the N+1 problem (501 queries per run) measurably
+ * slower than the JOIN FETCH optimized version (1 query per run) even on H2.
  */
 @Component
 public class NPlus1DataInitializer implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(NPlus1DataInitializer.class);
 
-    private static final int AUTHOR_COUNT = 50;
-    private static final int BOOKS_PER_AUTHOR = 20;
+    private static final int AUTHOR_COUNT = 500;
+    private static final int BOOKS_PER_AUTHOR = 10;
 
     private final AuthorRepository authorRepository;
 
@@ -43,8 +45,8 @@ public class NPlus1DataInitializer implements ApplicationRunner {
             authorRepository.save(author);
         }
 
-        log.info("N+1 test data ready: {} authors, {} books total.",
-                AUTHOR_COUNT, AUTHOR_COUNT * BOOKS_PER_AUTHOR);
+        log.info("N+1 test data ready: {} authors, {} books total — baseline fires {} SQL queries per run.",
+                AUTHOR_COUNT, AUTHOR_COUNT * BOOKS_PER_AUTHOR, AUTHOR_COUNT + 1);
     }
 }
 

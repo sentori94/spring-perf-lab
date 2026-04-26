@@ -67,7 +67,7 @@ export default function ScenarioChecklist({
               checked={mode === m}
               onChange={() => onModeChange(m)}
             />
-            {m === 'QUICK' ? 'Quick (~2s)' : 'Load test (Gatling)'}
+            {m === 'QUICK' ? 'Quick (~2s)' : 'Extended (~5s)'}
           </label>
         ))}
       </div>
