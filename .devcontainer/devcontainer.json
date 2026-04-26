@@ -1,0 +1,42 @@
+{
+  "name": "spring-perf-lab",
+  "image": "mcr.microsoft.com/devcontainers/java:21-bullseye",
+
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "vmware.vscode-spring-boot",
+        "esbenp.prettier-vscode"
+      ],
+      "settings": {
+        "java.jdt.ls.java.home": "/usr/local/sdkman/candidates/java/current",
+        "spring-boot.ls.java.home": "/usr/local/sdkman/candidates/java/current"
+      }
+    }
+  },
+
+  "postStartCommand": "bash .devcontainer/start.sh",
+
+  "forwardPorts": [8080, 5173],
+  "portsAttributes": {
+    "8080": {
+      "label": "Backend (Spring Boot)",
+      "onAutoForward": "notify"
+    },
+    "5173": {
+      "label": "Frontend (React)",
+      "onAutoForward": "openBrowser"
+    }
+  },
+
+  "remoteEnv": {
+    "JAVA_HOME": "/usr/local/sdkman/candidates/java/current"
+  }
+}
