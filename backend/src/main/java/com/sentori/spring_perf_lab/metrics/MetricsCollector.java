@@ -1,5 +1,6 @@
 package com.sentori.spring_perf_lab.metrics;
 
+import com.sun.management.ThreadMXBean;
 import org.springframework.stereotype.Component;
 
 import java.lang.management.GarbageCollectorMXBean;
@@ -22,10 +23,12 @@ public class MetricsCollector {
 
     private final MemoryMXBean memoryMXBean;
     private final List<GarbageCollectorMXBean> gcBeans;
+    private final ThreadMXBean threadMXBean;
 
     public MetricsCollector() {
         this.memoryMXBean = ManagementFactory.getMemoryMXBean();
         this.gcBeans = ManagementFactory.getGarbageCollectorMXBeans();
+        this.threadMXBean = (ThreadMXBean) ManagementFactory.getThreadMXBean();
     }
 
     /**
@@ -37,7 +40,8 @@ public class MetricsCollector {
                 currentHeapMb(),
                 System.currentTimeMillis(),
                 currentGcCount(),
-                currentGcPauseMs()
+                currentGcPauseMs(),
+                threadMXBean.getThreadAllocatedBytes(Thread.currentThread().threadId())
         );
     }
 
@@ -53,10 +57,13 @@ public class MetricsCollector {
         long gcCountDelta    = currentGcCount()    - runStart.startGcCount();
         long gcPauseMsDelta  = currentGcPauseMs()  - runStart.startGcPauseMs();
 
-        // Allocation rate = heap allouée pendant le run / durée en secondes
-        // On utilise max(0) car le GC peut avoir libéré de la mémoire entre les deux mesures
-        double allocatedMb   = Math.max(0, endHeapMb - runStart.startHeapMb());
-        double elapsedSec    = elapsedMs / 1000.0;
+        // Allocation rate via ThreadMXBean.getThreadAllocatedBytes() — compteur monotone
+        // cumulant tous les octets alloués par le thread appelant depuis le démarrage de la JVM.
+        // Contrairement à endHeap - startHeap, cette valeur est GC-agnostic : elle ne diminue
+        // jamais, même si le GC libère de la mémoire pendant le run.
+        long endAllocatedBytes   = threadMXBean.getThreadAllocatedBytes(Thread.currentThread().threadId());
+        double allocatedMb       = Math.max(0, endAllocatedBytes - runStart.startAllocatedBytes()) / (1024.0 * 1024.0);
+        double elapsedSec        = elapsedMs / 1000.0;
         double allocationRateMbPerSec = elapsedSec > 0 ? allocatedMb / elapsedSec : 0.0;
 
         return new MetricsSnapshot(
