@@ -84,6 +84,7 @@ public class TestRunnerService {
         long tStart = System.nanoTime();
         long gcPauseSum = 0, gcCountSum = 0, sqlSum = 0;
         double lastHeap = 0, lastAllocRate = 0;
+        long cpuTimeSum = 0;
         int n = 0;
 
         do {
@@ -91,13 +92,14 @@ public class TestRunnerService {
             gcPauseSum   += s.gcPauseMs();
             gcCountSum   += s.gcCount();
             sqlSum       += s.sqlQueryCount();
+            cpuTimeSum   += s.cpuTimeMs();
             lastHeap      = s.heapUsedMb();
             lastAllocRate = s.allocationRateMbPerSec();
             n++;
         } while (System.currentTimeMillis() < deadline);
 
         long baselineElapsedMs = (System.nanoTime() - tStart) / 1_000_000;
-        MetricsSnapshot baseline = new MetricsSnapshot(lastHeap, gcPauseSum, gcCountSum, lastAllocRate, sqlSum, baselineElapsedMs);
+        MetricsSnapshot baseline = new MetricsSnapshot(lastHeap, gcPauseSum, gcCountSum, lastAllocRate, sqlSum, baselineElapsedMs, cpuTimeSum);
 
         log.info("LOAD baseline for '{}': {} real iterations in {}ms", scenarioId, n, baselineElapsedMs);
 
@@ -117,18 +119,18 @@ public class TestRunnerService {
      */
     private MetricsSnapshot runNTimes(Supplier<MetricsSnapshot> runner, int n) {
         long tStart = System.nanoTime();
-        long gcPauseSum = 0, gcCountSum = 0, sqlSum = 0;
+        long gcPauseSum = 0, gcCountSum = 0, sqlSum = 0, cpuTimeSum = 0;
         double lastHeap = 0, lastAllocRate = 0;
         for (int i = 0; i < n; i++) {
             MetricsSnapshot s = runner.get();
             gcPauseSum   += s.gcPauseMs();
             gcCountSum   += s.gcCount();
             sqlSum       += s.sqlQueryCount();
+            cpuTimeSum   += s.cpuTimeMs();
             lastHeap      = s.heapUsedMb();
             lastAllocRate = s.allocationRateMbPerSec();
         }
         long elapsedMs = (System.nanoTime() - tStart) / 1_000_000;
-        return new MetricsSnapshot(lastHeap, gcPauseSum, gcCountSum, lastAllocRate, sqlSum, elapsedMs);
+        return new MetricsSnapshot(lastHeap, gcPauseSum, gcCountSum, lastAllocRate, sqlSum, elapsedMs, cpuTimeSum);
     }
 }
-

@@ -36,12 +36,14 @@ public class MetricsCollector {
      * Call this immediately before the code you want to measure.
      */
     public RunStart start() {
+        long threadId = Thread.currentThread().threadId();
         return new RunStart(
                 currentHeapMb(),
                 System.currentTimeMillis(),
                 currentGcCount(),
                 currentGcPauseMs(),
-                threadMXBean.getThreadAllocatedBytes(Thread.currentThread().threadId())
+                threadMXBean.getThreadAllocatedBytes(threadId),
+                threadMXBean.getThreadCpuTime(threadId)
         );
     }
 
@@ -52,19 +54,19 @@ public class MetricsCollector {
      * @param sqlQueryCount Number of SQL queries executed during the run
      */
     public MetricsSnapshot snapshot(RunStart runStart, long sqlQueryCount) {
+        long threadId        = Thread.currentThread().threadId();
         long elapsedMs       = System.currentTimeMillis() - runStart.startTimeMs();
         double endHeapMb     = currentHeapMb();
-        long gcCountDelta    = currentGcCount()    - runStart.startGcCount();
-        long gcPauseMsDelta  = currentGcPauseMs()  - runStart.startGcPauseMs();
+        long gcCountDelta    = currentGcCount()   - runStart.startGcCount();
+        long gcPauseMsDelta  = currentGcPauseMs() - runStart.startGcPauseMs();
 
-        // Allocation rate via ThreadMXBean.getThreadAllocatedBytes() — compteur monotone
-        // cumulant tous les octets alloués par le thread appelant depuis le démarrage de la JVM.
-        // Contrairement à endHeap - startHeap, cette valeur est GC-agnostic : elle ne diminue
-        // jamais, même si le GC libère de la mémoire pendant le run.
-        long endAllocatedBytes   = threadMXBean.getThreadAllocatedBytes(Thread.currentThread().threadId());
-        double allocatedMb       = Math.max(0, endAllocatedBytes - runStart.startAllocatedBytes()) / (1024.0 * 1024.0);
-        double elapsedSec        = elapsedMs / 1000.0;
+        long endAllocatedBytes        = threadMXBean.getThreadAllocatedBytes(threadId);
+        double allocatedMb            = Math.max(0, endAllocatedBytes - runStart.startAllocatedBytes()) / (1024.0 * 1024.0);
+        double elapsedSec             = elapsedMs / 1000.0;
         double allocationRateMbPerSec = elapsedSec > 0 ? allocatedMb / elapsedSec : 0.0;
+
+        long endCpuTimeNs  = threadMXBean.getThreadCpuTime(threadId);
+        long cpuTimeMs     = Math.max(0, endCpuTimeNs - runStart.startCpuTimeNs()) / 1_000_000;
 
         return new MetricsSnapshot(
                 endHeapMb,
@@ -72,7 +74,8 @@ public class MetricsCollector {
                 gcCountDelta,
                 allocationRateMbPerSec,
                 sqlQueryCount,
-                elapsedMs
+                elapsedMs,
+                cpuTimeMs
         );
     }
 
