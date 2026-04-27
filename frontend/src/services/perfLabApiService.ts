@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { ScenarioMetadata, TestRunRequest, TestRunResult } from '../types';
+import type { LiveMetrics, MicrometerMetrics, ScenarioMetadata, TestRunRequest, TestRunResult } from '../types';
 
 const api = axios.create({
   baseURL: '/api',
@@ -12,4 +12,7 @@ export const perfLabApiService = {
 
   runTest: (request: TestRunRequest): Promise<TestRunResult> =>
     api.post<TestRunResult>('/test/run', request).then(r => r.data),
+
+  getLiveMetrics: (): Promise<LiveMetrics> =>
+    api.get<LiveMetrics>('/metrics/live').then(r => r.data),
 };

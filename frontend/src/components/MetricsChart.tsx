@@ -15,6 +15,11 @@ export default function MetricsChart({ result }: Props) {
       Optimized: result.optimized.elapsedMs,
     },
     {
+      metric: 'CPU (ms)',
+      Baseline: result.baseline.cpuTimeMs,
+      Optimized: result.optimized.cpuTimeMs,
+    },
+    {
       metric: 'Heap (MB)',
       Baseline: parseFloat(result.baseline.heapUsedMb.toFixed(1)),
       Optimized: parseFloat(result.optimized.heapUsedMb.toFixed(1)),
@@ -50,4 +55,3 @@ export default function MetricsChart({ result }: Props) {
     </div>
   );
 }
-

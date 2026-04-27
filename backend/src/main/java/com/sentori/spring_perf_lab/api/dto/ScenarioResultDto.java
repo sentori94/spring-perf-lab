@@ -2,6 +2,7 @@ package com.sentori.spring_perf_lab.api.dto;
 
 import com.sentori.spring_perf_lab.metrics.MetricsDiff;
 import com.sentori.spring_perf_lab.metrics.MetricsSnapshot;
+import com.sentori.spring_perf_lab.metrics.MicrometerMetrics;
 
 /**
  * Result for a single scenario run, returned inside TestRunResultDto.
@@ -15,6 +16,7 @@ public record ScenarioResultDto(
         String scenarioId,
         MetricsSnapshot baseline,
         MetricsSnapshot optimized,
-        MetricsDiff diff
+        MetricsDiff diff,
+        MicrometerMetrics baselineMicrometer,
+        MicrometerMetrics optimizedMicrometer
 ) {}
-

@@ -20,8 +20,8 @@ public class CacheConfig {
             Caffeine.newBuilder()
                 .maximumSize(500)
                 .expireAfterWrite(5, TimeUnit.MINUTES)
+                .recordStats()  // active les stats pour Micrometer (cache.gets hits/misses)
         );
         return manager;
     }
 }
-

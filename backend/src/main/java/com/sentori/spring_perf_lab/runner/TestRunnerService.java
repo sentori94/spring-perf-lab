@@ -4,6 +4,7 @@ import com.sentori.spring_perf_lab.api.dto.ScenarioResultDto;
 import com.sentori.spring_perf_lab.api.dto.TestRunRequestDto;
 import com.sentori.spring_perf_lab.api.dto.TestRunResultDto;
 import com.sentori.spring_perf_lab.metrics.MetricsSnapshot;
+import com.sentori.spring_perf_lab.metrics.MicrometerCollector;
 import com.sentori.spring_perf_lab.scenarios.PerfScenario;
 import com.sentori.spring_perf_lab.scenarios.ScenarioExecutionException;
 import org.slf4j.Logger;
@@ -26,10 +27,12 @@ public class TestRunnerService {
     private static final Logger log = LoggerFactory.getLogger(TestRunnerService.class);
 
     private final Map<String, PerfScenario> scenariosById;
+    private final MicrometerCollector micrometerCollector;
 
-    public TestRunnerService(List<PerfScenario> scenarios) {
+    public TestRunnerService(List<PerfScenario> scenarios, MicrometerCollector micrometerCollector) {
         this.scenariosById = scenarios.stream()
                 .collect(Collectors.toMap(PerfScenario::getId, Function.identity()));
+        this.micrometerCollector = micrometerCollector;
     }
 
     public TestRunResultDto run(TestRunRequestDto request) {
@@ -59,14 +62,27 @@ public class TestRunnerService {
             return runLoad(scenarioId, scenario);
         }
 
-        MetricsSnapshot baseline  = scenario.runBaseline();
+        boolean isCache = scenarioId.equals("caffeine-cache");
+
+        var startBaseline = isCache
+                ? micrometerCollector.startForCache("productsByCategory")
+                : micrometerCollector.startJvmOnly();
+        MetricsSnapshot baseline = scenario.runBaseline();
+        var baselineMicrometer = micrometerCollector.collect(startBaseline);
+
+        var startOptimized = isCache
+                ? micrometerCollector.startForCache("productsByCategory")
+                : micrometerCollector.startJvmOnly();
         MetricsSnapshot optimized = scenario.runOptimized();
+        var optimizedMicrometer = micrometerCollector.collect(startOptimized);
 
         return new ScenarioResultDto(
                 scenarioId,
                 baseline,
                 optimized,
-                optimized.diffFrom(baseline)
+                optimized.diffFrom(baseline),
+                baselineMicrometer,
+                optimizedMicrometer
         );
     }
 
@@ -80,13 +96,15 @@ public class TestRunnerService {
      * (System.currentTimeMillis() rounds to ~1 ms and returns 0 for fast runs).
      */
     private ScenarioResultDto runLoad(String scenarioId, PerfScenario scenario) {
+        boolean isCache = scenarioId.equals("caffeine-cache");
+
         long deadline = System.currentTimeMillis() + LOAD_TARGET_MS;
         long tStart = System.nanoTime();
-        long gcPauseSum = 0, gcCountSum = 0, sqlSum = 0;
+        long gcPauseSum = 0, gcCountSum = 0, sqlSum = 0, cpuTimeSum = 0;
         double lastHeap = 0, lastAllocRate = 0;
-        long cpuTimeSum = 0;
         int n = 0;
 
+        var startBaseline = isCache ? micrometerCollector.startForCache("productsByCategory") : micrometerCollector.startJvmOnly();
         do {
             MetricsSnapshot s = scenario.runBaseline();
             gcPauseSum   += s.gcPauseMs();
@@ -97,20 +115,17 @@ public class TestRunnerService {
             lastAllocRate = s.allocationRateMbPerSec();
             n++;
         } while (System.currentTimeMillis() < deadline);
-
         long baselineElapsedMs = (System.nanoTime() - tStart) / 1_000_000;
         MetricsSnapshot baseline = new MetricsSnapshot(lastHeap, gcPauseSum, gcCountSum, lastAllocRate, sqlSum, baselineElapsedMs, cpuTimeSum);
+        var baselineMicrometer = micrometerCollector.collect(startBaseline);
 
         log.info("LOAD baseline for '{}': {} real iterations in {}ms", scenarioId, n, baselineElapsedMs);
 
+        var startOptimized = isCache ? micrometerCollector.startForCache("productsByCategory") : micrometerCollector.startJvmOnly();
         MetricsSnapshot optimized = runNTimes(scenario::runOptimized, n);
+        var optimizedMicrometer = micrometerCollector.collect(startOptimized);
 
-        return new ScenarioResultDto(
-                scenarioId,
-                baseline,
-                optimized,
-                optimized.diffFrom(baseline)
-        );
+        return new ScenarioResultDto(scenarioId, baseline, optimized, optimized.diffFrom(baseline), baselineMicrometer, optimizedMicrometer);
     }
 
     /**

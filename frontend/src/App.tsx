@@ -4,6 +4,8 @@ import { perfLabApiService } from './services/perfLabApiService';
 import ScenarioChecklist from './components/ScenarioChecklist';
 import ResultsDashboard from './components/ResultsDashboard';
 import ScenarioDetail from './components/ScenarioDetail';
+import LiveMetricsPanel from './components/LiveMetricsPanel';
+import InfoPage from './components/InfoPage';
 
 export default function App() {
   const [scenarios, setScenarios]     = useState<ScenarioMetadata[]>([]);
@@ -14,6 +16,7 @@ export default function App() {
   const [resultMode, setResultMode]   = useState<string>('');
   const [loading, setLoading]         = useState(false);
   const [error, setError]             = useState<string | null>(null);
+  const [showInfo, setShowInfo]       = useState(false);
 
   useEffect(() => {
     perfLabApiService.getScenarios()
@@ -47,48 +50,66 @@ export default function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>⚡ spring-perf-lab</h1>
-        <p>Select optimizations, run a benchmark, and see the before/after metrics.</p>
+        <div className="app-header-left">
+          <h1>⚡ spring-perf-lab</h1>
+          <p>Select optimizations, run a benchmark, and see the before/after metrics.</p>
+        </div>
+        <button
+          className={`info-btn ${showInfo ? 'info-btn--active' : ''}`}
+          onClick={() => setShowInfo(v => !v)}
+          title="About & Metrics glossary"
+        >
+          {showInfo ? '✕ Close' : '? About'}
+        </button>
       </header>
 
       <div className="app-body">
         {error && <div className="error-banner">{error}</div>}
 
-        <ScenarioChecklist
-          scenarios={scenarios}
-          selectedIds={selectedIds}
-          focusedId={focusedId}
-          mode={mode}
-          loading={loading}
-          onToggle={toggleScenario}
-          onFocus={id => setFocusedId(prev => prev === id ? null : id)}
-          onModeChange={setMode}
-          onRun={handleRun}
-        />
-
-        <main className="main-content">
-          {/* Panneau Before/After/Why — affiché quand on clique sur un scénario */}
-          {focusedScenario && results.length === 0 && (
-            <div className="detail-panel">
-              <h2>{focusedScenario.name}</h2>
-              <ScenarioDetail scenario={focusedScenario} />
+        {showInfo ? (
+          <InfoPage />
+        ) : (
+          <>
+            <div className="sidebar">
+              <ScenarioChecklist
+                scenarios={scenarios}
+                selectedIds={selectedIds}
+                focusedId={focusedId}
+                mode={mode}
+                loading={loading}
+                onToggle={toggleScenario}
+                onFocus={id => setFocusedId(prev => prev === id ? null : id)}
+                onModeChange={setMode}
+                onRun={handleRun}
+              />
+              <LiveMetricsPanel />
             </div>
-          )}
 
-          {results.length === 0 && !loading && !focusedScenario && (
-            <div className="empty-state">
-              <p>Select a scenario to see the code explanation, then click <strong>Run benchmark</strong>.</p>
-            </div>
-          )}
+            <main className="main-content">
+              {/* Panneau Before/After/Why — affiché quand on clique sur un scénario */}
+              {focusedScenario && results.length === 0 && (
+                <div className="detail-panel">
+                  <h2>{focusedScenario.name}</h2>
+                  <ScenarioDetail scenario={focusedScenario} />
+                </div>
+              )}
 
-          {loading && <div className="loading-state">Running benchmark…</div>}
+              {results.length === 0 && !loading && !focusedScenario && (
+                <div className="empty-state">
+                  <p>Select a scenario to see the code explanation, then click <strong>Run benchmark</strong>.</p>
+                </div>
+              )}
 
-          <ResultsDashboard
-            results={results}
-            mode={resultMode}
-            scenarios={scenarios}
-          />
-        </main>
+              {loading && <div className="loading-state">Running benchmark…</div>}
+
+              <ResultsDashboard
+                results={results}
+                mode={resultMode}
+                scenarios={scenarios}
+              />
+            </main>
+          </>
+        )}
       </div>
     </div>
   );
