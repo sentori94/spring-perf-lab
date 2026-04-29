@@ -18,5 +18,8 @@ public record ScenarioResultDto(
         MetricsSnapshot optimized,
         MetricsDiff diff,
         MicrometerMetrics baselineMicrometer,
-        MicrometerMetrics optimizedMicrometer
+        MicrometerMetrics optimizedMicrometer,
+        long baselineStartOffsetMs,
+        long optimizedStartOffsetMs,
+        long optimizedEndOffsetMs
 ) {}

@@ -36,11 +36,11 @@ public class TestRunnerService {
     }
 
     public TestRunResultDto run(TestRunRequestDto request) {
+        long runStartEpochMs = System.currentTimeMillis();
         List<ScenarioResultDto> results = request.scenarioIds().stream()
-                .map(id -> runOne(id, request.mode()))
+                .map(id -> runOne(id, request.mode(), runStartEpochMs))
                 .toList();
-
-        return new TestRunResultDto(request.mode(), results);
+        return new TestRunResultDto(request.mode(), results, runStartEpochMs);
     }
 
     public List<PerfScenario> listAll() {
@@ -49,7 +49,18 @@ public class TestRunnerService {
 
     private static final long LOAD_TARGET_MS = 5_000;
 
-    private ScenarioResultDto runOne(String scenarioId, String mode) {
+    /**
+     * Demande un GC et attend 200 ms pour laisser la JVM nettoyer le heap
+     * avant de démarrer une phase baseline ou optimized.
+     * System.gc() est une suggestion — la JVM reste libre de l'ignorer,
+     * mais en pratique G1/ZGC l'honore quasi systématiquement.
+     */
+    private static void cleanHeap() {
+        System.gc();
+        try { Thread.sleep(200); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+    }
+
+    private ScenarioResultDto runOne(String scenarioId, String mode, long runStartEpochMs) {
         PerfScenario scenario = scenariosById.get(scenarioId);
         if (scenario == null) {
             throw new ScenarioExecutionException(scenarioId,
@@ -59,22 +70,27 @@ public class TestRunnerService {
         log.info("Running scenario '{}' in {} mode", scenarioId, mode);
 
         if ("LOAD".equalsIgnoreCase(mode)) {
-            return runLoad(scenarioId, scenario);
+            return runLoad(scenarioId, scenario, runStartEpochMs);
         }
 
         boolean isCache = scenarioId.equals("caffeine-cache");
 
+        cleanHeap();
+        long baselineStart = System.currentTimeMillis() - runStartEpochMs;
         var startBaseline = isCache
                 ? micrometerCollector.startForCache("productsByCategory")
                 : micrometerCollector.startJvmOnly();
         MetricsSnapshot baseline = scenario.runBaseline();
         var baselineMicrometer = micrometerCollector.collect(startBaseline);
 
+        cleanHeap();
+        long optimizedStart = System.currentTimeMillis() - runStartEpochMs;
         var startOptimized = isCache
                 ? micrometerCollector.startForCache("productsByCategory")
                 : micrometerCollector.startJvmOnly();
         MetricsSnapshot optimized = scenario.runOptimized();
         var optimizedMicrometer = micrometerCollector.collect(startOptimized);
+        long optimizedEnd = System.currentTimeMillis() - runStartEpochMs;
 
         return new ScenarioResultDto(
                 scenarioId,
@@ -82,7 +98,10 @@ public class TestRunnerService {
                 optimized,
                 optimized.diffFrom(baseline),
                 baselineMicrometer,
-                optimizedMicrometer
+                optimizedMicrometer,
+                baselineStart,
+                optimizedStart,
+                optimizedEnd
         );
     }
 
@@ -95,9 +114,11 @@ public class TestRunnerService {
      * Using System.nanoTime() ensures sub-millisecond runs are timed accurately
      * (System.currentTimeMillis() rounds to ~1 ms and returns 0 for fast runs).
      */
-    private ScenarioResultDto runLoad(String scenarioId, PerfScenario scenario) {
+    private ScenarioResultDto runLoad(String scenarioId, PerfScenario scenario, long runStartEpochMs) {
         boolean isCache = scenarioId.equals("caffeine-cache");
 
+        cleanHeap();
+        long baselineStart = System.currentTimeMillis() - runStartEpochMs;
         long deadline = System.currentTimeMillis() + LOAD_TARGET_MS;
         long tStart = System.nanoTime();
         long gcPauseSum = 0, gcCountSum = 0, sqlSum = 0, cpuTimeSum = 0;
@@ -121,11 +142,15 @@ public class TestRunnerService {
 
         log.info("LOAD baseline for '{}': {} real iterations in {}ms", scenarioId, n, baselineElapsedMs);
 
+        cleanHeap();
+        long optimizedStart = System.currentTimeMillis() - runStartEpochMs;
         var startOptimized = isCache ? micrometerCollector.startForCache("productsByCategory") : micrometerCollector.startJvmOnly();
         MetricsSnapshot optimized = runNTimes(scenario::runOptimized, n);
         var optimizedMicrometer = micrometerCollector.collect(startOptimized);
+        long optimizedEnd = System.currentTimeMillis() - runStartEpochMs;
 
-        return new ScenarioResultDto(scenarioId, baseline, optimized, optimized.diffFrom(baseline), baselineMicrometer, optimizedMicrometer);
+        return new ScenarioResultDto(scenarioId, baseline, optimized, optimized.diffFrom(baseline),
+                baselineMicrometer, optimizedMicrometer, baselineStart, optimizedStart, optimizedEnd);
     }
 
     /**

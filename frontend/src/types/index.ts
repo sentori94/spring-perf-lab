@@ -49,11 +49,15 @@ export interface ScenarioResult {
   diff:                MetricsDiff;
   baselineMicrometer:  MicrometerMetrics | null;
   optimizedMicrometer: MicrometerMetrics | null;
+  baselineStartOffsetMs:  number;
+  optimizedStartOffsetMs: number;
+  optimizedEndOffsetMs:   number;
 }
 
 export interface TestRunResult {
-  mode: string;
-  results: ScenarioResult[];
+  mode:           string;
+  results:        ScenarioResult[];
+  runStartEpochMs: number;
 }
 
 // ── Request ───────────────────────────────────────────────────────────────────

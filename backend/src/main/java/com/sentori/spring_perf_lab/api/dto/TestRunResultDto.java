@@ -10,6 +10,6 @@ import java.util.List;
  */
 public record TestRunResultDto(
         String mode,
-        List<ScenarioResultDto> results
+        List<ScenarioResultDto> results,
+        long runStartEpochMs
 ) {}
-

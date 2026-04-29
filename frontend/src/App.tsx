@@ -4,8 +4,9 @@ import { perfLabApiService } from './services/perfLabApiService';
 import ScenarioChecklist from './components/ScenarioChecklist';
 import ResultsDashboard from './components/ResultsDashboard';
 import ScenarioDetail from './components/ScenarioDetail';
-import LiveMetricsPanel from './components/LiveMetricsPanel';
+import LiveRunChart from './components/LiveRunChart';
 import InfoPage from './components/InfoPage';
+import { useRunRecorder } from './hooks/useRunRecorder';
 
 export default function App() {
   const [scenarios, setScenarios]     = useState<ScenarioMetadata[]>([]);
@@ -14,9 +15,12 @@ export default function App() {
   const [mode, setMode]               = useState<TestMode>('QUICK');
   const [results, setResults]         = useState<ScenarioResult[]>([]);
   const [resultMode, setResultMode]   = useState<string>('');
+  const [runStartEpochMs, setRunStartEpochMs] = useState<number>(0);
   const [loading, setLoading]         = useState(false);
   const [error, setError]             = useState<string | null>(null);
   const [showInfo, setShowInfo]       = useState(false);
+
+  const { points, startEpochMs } = useRunRecorder(loading);
 
   useEffect(() => {
     perfLabApiService.getScenarios()
@@ -33,10 +37,12 @@ export default function App() {
   async function handleRun() {
     setLoading(true);
     setError(null);
+    setResults([]);
     try {
       const data = await perfLabApiService.runTest({ scenarioIds: selectedIds, mode });
       setResults(data.results);
       setResultMode(data.mode);
+      setRunStartEpochMs(data.runStartEpochMs);
       setFocusedId(null);
     } catch {
       setError('Benchmark failed. Check the backend logs.');
@@ -57,9 +63,9 @@ export default function App() {
         <button
           className={`info-btn ${showInfo ? 'info-btn--active' : ''}`}
           onClick={() => setShowInfo(v => !v)}
-          title="About & Metrics glossary"
+          title="Documentation & glossaire des métriques"
         >
-          {showInfo ? '✕ Close' : '? About'}
+          {showInfo ? '✕ Fermer' : '📖 Avant de commencer'}
         </button>
       </header>
 
@@ -82,11 +88,9 @@ export default function App() {
                 onModeChange={setMode}
                 onRun={handleRun}
               />
-              <LiveMetricsPanel />
             </div>
 
             <main className="main-content">
-              {/* Panneau Before/After/Why — affiché quand on clique sur un scénario */}
               {focusedScenario && results.length === 0 && (
                 <div className="detail-panel">
                   <h2>{focusedScenario.name}</h2>
@@ -98,6 +102,17 @@ export default function App() {
                 <div className="empty-state">
                   <p>Select a scenario to see the code explanation, then click <strong>Run benchmark</strong>.</p>
                 </div>
+              )}
+
+              {/* Graphe JVM temps réel — visible pendant ET après le run */}
+              {(loading || points.length > 0) && (
+                <LiveRunChart
+                  points={points}
+                  results={results}
+                  isRunning={loading}
+                  runStartEpochMs={runStartEpochMs}
+                  startEpochMs={startEpochMs}
+                />
               )}
 
               {loading && <div className="loading-state">Running benchmark…</div>}

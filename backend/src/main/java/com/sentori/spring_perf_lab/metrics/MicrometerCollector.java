@@ -111,15 +111,23 @@ public class MicrometerCollector {
 
     private Double getHeapUsedMb() {
         try {
-            var gauge = meterRegistry.find("jvm.memory.used").tag("area", "heap").gauge();
-            return gauge != null ? gauge.value() / (1024.0 * 1024.0) : null;
+            double total = meterRegistry.find("jvm.memory.used").tag("area", "heap")
+                    .gauges().stream()
+                    .mapToDouble(g -> g.value())
+                    .filter(v -> v >= 0)
+                    .sum();
+            return total > 0 ? total / (1024.0 * 1024.0) : null;
         } catch (Exception e) { return null; }
     }
 
     private Double getHeapMaxMb() {
         try {
-            var gauge = meterRegistry.find("jvm.memory.max").tag("area", "heap").gauge();
-            return gauge != null ? gauge.value() / (1024.0 * 1024.0) : null;
+            double total = meterRegistry.find("jvm.memory.max").tag("area", "heap")
+                    .gauges().stream()
+                    .mapToDouble(g -> g.value())
+                    .filter(v -> v >= 0)
+                    .sum();
+            return total > 0 ? total / (1024.0 * 1024.0) : null;
         } catch (Exception e) { return null; }
     }
 
